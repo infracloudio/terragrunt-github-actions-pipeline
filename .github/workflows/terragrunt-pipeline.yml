@@ -36,7 +36,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-region: ap-south-1
-        OIDC_ROLE_ARN: ${{ secrets.OIDC_ROLE_ARN }}
+        role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
         # aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
         # aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
         # aws-session-token: ${{ inputs.AWS_SESSION_TOKEN }}
