@@ -1,0 +1,73 @@
+name: 'Terragrunt CI'
+
+on:
+#    push:  #dispatch workflow ---- read and try
+#     branches:
+#     - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  Terragrunt:
+    name: 'Terragrunt'
+    runs-on: ubuntu-latest
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Install the latest version of Terragrunt CLI and configure the Terragrunt CLI configuration file with a Terragrunt Cloud user API token
+    - name: Setup Terraform v1.2.6
+      uses: hashicorp/setup-Terraform@v1
+      with:
+        terraform_version: 1.2.6
+        terraform_wrapper: true
+    - name: Setup Terraform version
+      run: terraform --version
+    - name: Setup Terraform wrapper path
+      run: which terraform
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: ap-south-1
+        OIDC_ROLE_ARN: ${{ secrets.OIDC_ROLE_ARN }}
+        # aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
+        # aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+        # aws-session-token: ${{ inputs.AWS_SESSION_TOKEN }}
+
+    - name: Setup Terragrunt v0.38.4
+      run: |
+        sudo wget -q -O /bin/terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v0.38.4/terragrunt_linux_amd64"
+        sudo chmod +x /bin/terragrunt
+        terragrunt -v
+
+    # Initialize a new or existing Terragrunt working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terragrunt Init
+      run: terragrunt init --terragrunt-non-interactive
+      # env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+    # Generates an execution plan for Terragrunt
+    - name: Terragrunt Plan
+      run: terragrunt run-all plan --terragrunt-non-interactive
+      # env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+      # On push to main, build or change infrastructure according to Terragrunt configuration files
+      # Note: It is recommended to set up a required "strict" status check in your repository for "Terragrunt Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
+    - name: Terragrunt Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terragrunt run-all apply --terragrunt-non-interactive
+      # env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      # - name: "Configure AWS Credentials" Action For GitHub Actions
+      #   uses: aws-actions/configure-aws-credentials@v1
